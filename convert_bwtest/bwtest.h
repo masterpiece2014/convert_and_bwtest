@@ -52,7 +52,7 @@
 #define _BOWEN_TEST_H_
 
 #ifdef __GNUC__
-    #if __GNUC__*100 + __GNUC_MINOR__*10 + __GNUC_PATCHLEVEL__ > 472
+    #if __GNUC__*100 + __GNUC_MINOR__*10 + __GNUC_PATCHLEVEL__ > 470
         #define __BWTEST_HAS_CXX11__
     #endif
     #if __GNUC__*100 + __GNUC_MINOR__*10 + __GNUC_PATCHLEVEL__ < 400
@@ -87,7 +87,8 @@
 
 
 
-#ifdef __BWTEST_HAS_CXX11__
+/// problem withto_string, disbled
+#ifdef __BWTEST_sdgfdgdfgedgfdfhdfh
 
 #undef ERROR_MSG
 #define ERROR_MSG(message)\
