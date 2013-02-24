@@ -74,6 +74,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <limits>
 #include <cstddef>
 #include <cmath>
 #include <cassert>
