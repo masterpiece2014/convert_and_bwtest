@@ -87,8 +87,8 @@
 
 
 
-/// problem withto_string, disbled
-#ifdef __BWTEST_sdgfdgdfgedgfdfhdfh
+/// problem withto_string, break this macro
+#ifdef __BWTEST_
 
 #undef ERROR_MSG
 #define ERROR_MSG(message)\
@@ -367,7 +367,7 @@ class _BWTEST_TEST_NAME(test_name) : public bwtest::TestBase\
 };\
 const bool BWTEST_bool_##test_name##_registered =\
         bwtest::TestRegister::instance()->registerTest(new _BWTEST_TEST_NAME(test_name));\
-void _BWTEST_TEST_NAME(test_name)::testBody() __BW_OVERRRIDE
+void _BWTEST_TEST_NAME(test_name)::testBody()
 
 
 #undef RUN_ALL
