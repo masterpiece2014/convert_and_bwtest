@@ -23,7 +23,6 @@
  * @author: CaiBowen
  * @feedback: feedback2bowen@outlook.com
  * @file: Convert.h
- * @last modified: 2013.2.16
  * @brief: fast and safe conversion between string and other types
  *          illustrated at convert_test.cpp
 */
@@ -275,8 +274,8 @@ namespace _detail
     }
 
     double
-    _reparse(const char* str) {
-        const char* c_str = _skipBlanks(str);
+    _reparse(const char* c_str) {
+        c_str = _skipBlanks(c_str);
         size_t len = strlen(c_str);
         switch(c_str[0]) {
         case 'e':   if (len == 1)   return 2.7182818284590452353602874713527;
@@ -345,8 +344,8 @@ FUNCTION_FACTORY_STR_TO_NUM(long double, long double, strtold(c_str, NULL))
 //                                           String ==>  boolean
 //----------------------------------------------------------------
     template<> bool
-    to<bool>(const char* str) {
-        const char* c_str = _detail::_skipBlanks(str);
+    to<bool>(const char* c_str) {
+        c_str = _detail::_skipBlanks(c_str);
         size_t len = strlen(c_str);
         switch(c_str[0]) {
         case '0':   if (len == 1)   return false;

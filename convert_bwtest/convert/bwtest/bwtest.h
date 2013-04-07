@@ -1,13 +1,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-////// Copyright 2013, Cai Bowen
-////// All rights reserved.
+//////          Copyright 2013, Cai Bowen
+//////              All rights reserved.
 //////
 //////  Author: Cai Bowen
 //////      contact/bug report/get new version
  /////           at
  /////       feedback2bowen@outlook.com
- /////
+//////           or
+//////      https://github.com/xkommando/convert_and_bwtest
+//////
+//////          last modified : 2013.3.12
+//////
+//////
 ////// Redistribution and use in source and binary forms, with or without
 ////// modification, are permitted provided that the following conditions are
 ////// met:
@@ -38,14 +43,19 @@
 //////      The Google C++ Testing Framework (Google Test)
 //////
 ////// Compatibility:
-//////      bwtest has been tested on:
+//////      BWTest_Names has been tested on:
 //////      GCC 4.7.2 on 64-bit MS Windows and 64-bit Linux
 //////      MS Virtual C++ 11(_MSC_VER 1700) on 64-bit Windows
 //////
-////// Last modified: 2013.2.19
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+//    C++11 features maybe needed:
+//        chrono for high resolution clock
+//        delete default constructors and assign operator
+//        nullptr
+//         soped enumeration
+//          ...
 
 
 #ifndef _BOWEN_TEST_H_
@@ -53,7 +63,7 @@
 
 #ifdef __GNUC__
     #if __GNUC__*100 + __GNUC_MINOR__*10 + __GNUC_PATCHLEVEL__ > 470
-        #define __BWTEST_HAS_CXX11__
+        #define __BWTEST_HAS_ENOUGH_CXX11__
     #endif
     #if __GNUC__*100 + __GNUC_MINOR__*10 + __GNUC_PATCHLEVEL__ < 400
         #error "please up data your complier to GCC 4.0.0 and above"
@@ -62,7 +72,7 @@
 #else
 #ifdef _MSC_VER
     #if _MSC_VER > 1700
-        #define __BWTEST_HAS_CXX11__
+        #define __BWTEST_HAS_ENOUGH_CXX11__
     #endif
     #if _MSC_VER < 1300
         #error "please up data your complier to VC 7.0 and above"
@@ -70,26 +80,33 @@
 #endif
 #endif
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+                    #undef __BWTEST_HAS_ENOUGH_CXX11__
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <vector>
 #include <limits>
 #include <cstddef>
+#include <cstdlib>
 #include <cmath>
 #include <cassert>
+#include <cstring>
 
-#ifdef __BWTEST_HAS_CXX11__
+#ifdef __BWTEST_HAS_ENOUGH_CXX11__
 #include <chrono>
 #else
 #include <ctime>
 #endif
 
 
-
-/// problem withto_string, break this macro
-#ifdef __BWTEST_
-
+/// to_string may not be supported
+/// so break this
+#ifdef __BWTEST_HAS_CX
+#include <string>
 #undef ERROR_MSG
 #define ERROR_MSG(message)\
 (__FILE__ "(" + std::to_string((long long int) __LINE__) + "): " + (message)\).c_str()
@@ -103,12 +120,7 @@
 #else
 
     template<class T, class E>
-    void __BWTEST_RANGE_CHEACK(T val, E) {
-        val <= static_cast<T>(std::numeric_limits<E>::max())
-        ?   (void)0 : throw std::overflow_error("overflow in convertion");
-        val >= static_cast<T>(std::numeric_limits<E>::min())
-            ? (void)0 : throw std::underflow_error("underflow in convertion");
-    }
+    void __BWTEST_RANGE_CHEACK(T val, E);
 
 #undef RANGE_CHEACK
 #define RANGE_CHEACK(val, TypeName)\
@@ -148,15 +160,70 @@
     assert(fabs(x - y) < z);
 
 
+
+
+#ifdef __BWTEST_HAS_ENOUGH_CXX11__
+#define __BW_NOEXCEPT noexcept
+#define __BW_NULL_PTR nullptr
+#define __BW_OVERRRIDE override
+#else
+#define __BW_NOEXCEPT throw()
+#define __BW_NULL_PTR NULL
+#define __BW_OVERRRIDE
+#endif
+
+///!<  scoped enumeration is not supported in c++99 or c++03
+///!< what a pity !
+#ifndef __BWTEST_HAS_ENOUGH_CXX11__
+    enum BWTestOutputType {
+        stdCout,
+        stdCerr,
+        stdClog,
+        file
+    };
+#endif
+
+
+class bwtest
+{
+public:
+#ifdef __BWTEST_HAS_ENOUGH_CXX11__
+    enum BWTestOutputType {
+        stdCout,
+        stdCerr,
+        stdClog,
+        file
+    };
+    bwtest() = delete;
+    static BWTestOutputType outputStream;
+#else
+private:
+    bwtest() {}
+    static BWTestOutputType outputStream;
+#endif
+private:
+    static char* _fileName;
+
+public:
+
+    static void setOutput(const char* c_str);
+    static std::ostream& getOutputStream();
+    static void cleanOutputStream();
+};
+
+
+
 #define COUT_1(obj)
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////  enable printing //////////////////////////////
-//////////////////      in looping functions and testCase.run() ///////////////
+//////////////////      in looping functions and testCase.excute() ///////////////
                                 #define DO_PRINT
 ///////////////////////////////////////////////////////////////////////////////
 #ifdef DO_PRINT
 #undef COUT_1
-#define COUT_1(obj)  std::cout << obj;
+#define COUT_1(obj) ::bwtest::getOutputStream() << obj
+
 #endif
 
 #undef LOOP_FUNC
@@ -189,21 +256,16 @@
                 COUT_1("\n");\
             }
 
-
-namespace bwtest
+namespace BWTest_Names
 {
-
 //// multi-type, multi-arguments printing
 ////    e.g.
 //// print(std::string("sdfds"), 32234, 546.546, "sdgdf", 'c');
 ////
-#ifdef __BWTEST_HAS_CXX11__
-void print(){}
+#ifdef __BWTEST_HAS_ENOUGH_CXX11__
+void print();
 template<typename T, typename... Ts>
-void print(const T& obj, const Ts&... others) {
-    std::cout << obj << " ";
-    print(others...);
-}
+void print(const T& obj, const Ts&... others);
 
 #define __BW_NOEXCEPT noexcept
 #define __BW_NULL_PTR nullptr
@@ -218,14 +280,15 @@ void print(const T& obj, const Ts&... others) {
 class TestBase
 {
     private:
-        size_t _excutionTimes;
+        size_t _excutionNumberOfTimes;
         size_t _stdExceptionCaught;
         size_t _otherExceptionCaught;
+        unsigned long int _timePassed;// duration, in second.
         const char* _testName;
 
     virtual void testBody() = 0;
 
-#ifdef __BWTEST_HAS_CXX11__
+#ifdef __BWTEST_HAS_ENOUGH_CXX11__
         TestBase() = delete;
         TestBase(const TestBase&) = delete;
         TestBase& operator= (const TestBase& ) = delete;
@@ -233,47 +296,29 @@ class TestBase
     private:
         TestBase() {}
         TestBase(const TestBase&) {}
-        TestBase& operator= (const TestBase& ) {}
+        TestBase& operator= (const TestBase& ) { return *this;}
 #endif
 
   public:
         explicit
         TestBase(size_t tmies, const char* c_str)
-        : _excutionTimes(tmies),
+        : _excutionNumberOfTimes(tmies),
           _stdExceptionCaught(0),
           _otherExceptionCaught(0),
           _testName(c_str)  {}
 
         virtual
-        ~TestBase() __BW_NOEXCEPT {
-            delete _testName;
-        }
+        ~TestBase() __BW_NOEXCEPT;
+        void excute();
 
-        void run() {
-            for(size_t i = 0; i != _excutionTimes; ++i) {
-                try {
-                    testBody();
-                }catch(std::exception& e) {
-                    _stdExceptionCaught++;
-                    COUT_1("\n>>> Caught std exception:\n>>> " << e.what());
-                }catch(...) {
-                    _otherExceptionCaught++;
-                    COUT_1("\n>>> Caught other exception");
-                }
-            }
-        }
-        void printReport() __BW_NOEXCEPT {
-            std::cout << "\n>>>  test\"" << _testName
-            << "\" has been tested for " << _excutionTimes << " times.";
-            std::cout << "\n>>> caught std::exception " << _stdExceptionCaught << " times."
-            << "\n>>> caught other exception " << _otherExceptionCaught << " times." << std::endl;
-        }
+        void printReport() __BW_NOEXCEPT;
 };
+
 class TestRegister
 {
     private:
         TestRegister(){}
-#ifdef __BWTEST_HAS_CXX11__
+#ifdef __BWTEST_HAS_ENOUGH_CXX11__
         TestRegister(const TestRegister& ) = delete;
         TestRegister(TestRegister&&) = delete;
         TestRegister&
@@ -287,69 +332,60 @@ class TestRegister
         operator= (const TestRegister&){return *this;}
 #endif
 
+    private:
         std::vector<TestBase*> _testCaseList;
 
-        unsigned long int _timeElapsed;// duration, in second.
+        unsigned long int _totalTime;// duration, in second.
 
         static TestRegister* _handler;
 
     public:
-        /// _handler does not  need to be deleted
-        ~TestRegister() __BW_NOEXCEPT {
-            for(size_t i = 0; i != _testCaseList.size(); ++i) {
-                delete _testCaseList[i];
-            }
-        }
-        bool registerTest(TestBase* newTest) {
-            _handler->_testCaseList.push_back(newTest);
-            return true;
-        }
+        /// _handler itself does not  need to be deleted
+        ~TestRegister() __BW_NOEXCEPT;
+        bool registerTest(TestBase* newTest);
 
-        static TestRegister*
-        instance() {
-            if(TestRegister::_handler == NULL) {
-                _handler = new TestRegister();
-            }
-            return _handler;
-        }
+        static TestRegister* instance();
 
-#ifdef __BWTEST_HAS_CXX11__
-        static int runAllTests() {
-            auto t_start = std::chrono::high_resolution_clock::now();
-            for(size_t i = 0; i != _handler->_testCaseList.size(); ++i) {
-                _handler->_testCaseList[i]->run();
-            }
-            auto t_end = std::chrono::high_resolution_clock::now();
-            _handler->_timeElapsed
-            = std::chrono::duration_cast<std::chrono::seconds>(t_end - t_start).count();
-            return 0;
-        }
-#else
-        static void runAllTests() {
-            std::clock_t c_start = std::clock();
-            for(size_t i = 0; i != _handler->_testCaseList.size(); ++i) {
-                _handler->_testCaseList[i]->run();
-            }
-            std::clock_t c_end = std::clock();
-            _handler->_timeElapsed
-                = (c_end - c_start) / CLOCKS_PER_SEC;
-        }
-#endif
+        static void runAllTests();
+
         static void
-        reportAllTests() __BW_NOEXCEPT {
-            std::cout << "\n\n>>>\t TEST REPORT" << std::endl;
-            time_t t_now = std::time(NULL);
-            std::cout << ">>>time: " << std::asctime(std::localtime(&t_now));
-            for(size_t i = 0; i != _handler->_testCaseList.size(); ++i) {
-                _handler->_testCaseList[i]->printReport();
-            }
-            std::cout << "\n>>> Time elapsed: "
-                << _handler->_timeElapsed << " seconds" << std::endl;
-        }
+        reportAllTests() __BW_NOEXCEPT;
 };
-TestRegister* TestRegister::_handler = __BW_NULL_PTR;
 
-}// namespace bwtest
+//////////////////////////////////////////////////////////////////////////////////////////////
+/////////////       copyright
+/////////////
+///////////// following two classes are adopted from stackoverflow
+/////////////   http://stackoverflow.com/questions/760301/implementing-a-no-op-stdostream
+/////////////////////////////////////////////////////////////////////////////////////////////
+class basicNullBuf: public std::basic_streambuf<char, typename std::char_traits<char> >
+{
+    typename std::char_traits<char>::int_type overflow(typename std::char_traits<char>::int_type c)
+    {
+        typedef std::char_traits<char>  nameTmp;
+        return nameTmp::not_eof(c);
+      //  return  typename template std::char_traits<char>::typename not_eof(c); // indicate success
+    }
+};
+class basicNullOStream: public std::basic_ostream<char, typename std::char_traits<char> >
+{
+    public:
+        basicNullOStream():
+        std::basic_ios<char, typename std::char_traits<char> >(&m_sbuf),
+        std::basic_ostream<char, typename std::char_traits<char> >(&m_sbuf)
+        {
+            std::basic_ostream<char, typename std::char_traits<char> >::init(&m_sbuf);
+        }
+
+    private:
+        basicNullBuf m_sbuf;
+};
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+}// namespace BWTest_Names
+
+
 
 #undef _BWTEST_TEST_NAME
 #define _BWTEST_TEST_NAME(test_name)\
@@ -358,7 +394,7 @@ TestRegister* TestRegister::_handler = __BW_NULL_PTR;
 
 #undef TEST
 #define TEST(test_name, test_time)\
-class _BWTEST_TEST_NAME(test_name) : public bwtest::TestBase\
+class _BWTEST_TEST_NAME(test_name) : public BWTest_Names::TestBase\
 {\
     void testBody() __BW_OVERRRIDE;\
     public:\
@@ -366,24 +402,24 @@ class _BWTEST_TEST_NAME(test_name) : public bwtest::TestBase\
         :   TestBase(test_time, #test_name)  {}\
 };\
 const bool BWTEST_bool_##test_name##_registered =\
-        bwtest::TestRegister::instance()->registerTest(new _BWTEST_TEST_NAME(test_name));\
+        BWTest_Names::TestRegister::instance()->registerTest(new _BWTEST_TEST_NAME(test_name));\
 void _BWTEST_TEST_NAME(test_name)::testBody()
 
 
 #undef RUN_ALL
 #define RUN_ALL\
-    bwtest::TestRegister::instance()->runAllTests
+    BWTest_Names::TestRegister::instance()->runAllTests
 
 #undef REPORT_ALL
 #define REPORT_ALL\
-    bwtest::TestRegister::instance()->reportAllTests
+    BWTest_Names::TestRegister::instance()->reportAllTests
 
 
 class BWTEST_ExpectAux
 {
     bool _isFalse;
 
-#ifdef __BWTEST_HAS_CXX11__
+#ifdef __BWTEST_HAS_ENOUGH_CXX11__
     BWTEST_ExpectAux() = delete;
     BWTEST_ExpectAux(const BWTEST_ExpectAux&) = delete;
     BWTEST_ExpectAux(BWTEST_ExpectAux&&) = delete;
@@ -398,42 +434,24 @@ class BWTEST_ExpectAux
         BWTEST_ExpectAux&
         operator= (const BWTEST_ExpectAux&){return *this;}
 #endif
-public: // only this ctor is enabled
+public: // only one ctor is enabled
     explicit BWTEST_ExpectAux(
                 bool statement,
                 bool expectation,
-              const char* text0,
-              const char* text1,
+              const char* expectText0,
+              const char* expectText1,
+              const char* actualText,
                 const char* filePath,
-                int lineNumber)
-    : _isFalse(statement != expectation) {
-
-        if(_isFalse) {
-        //    time_t t_now = std::time(NULL);
-            std::cerr << "\n\n>>>  expect: \" "
-             << text0 << text1
-             << "\"  fell."
-             << "\n>>>  at file: " << filePath
-             << "\n>>>  line: " << lineNumber
-             << std::endl;
-         //    << "\n>>> system time: "
-         //    << std::asctime(std::localtime(&t_now));
-        }
-    }
+                int lineNumber);
 
     static bool BWTEST_bool_caughtExcepttion;
 
     template<typename PrintType>
 friend std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg);
 };
-bool BWTEST_ExpectAux::BWTEST_bool_caughtExcepttion = false;
 
 template<typename PrintType>
-std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
-    if(expAux._isFalse)
-        std::cerr <<"\n>>>  msg: "<< msg;
-    return std::cerr;
-}
+std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg);
 
 
 #undef expect_true
@@ -442,6 +460,7 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
                     true,\
                   #statement,\
                   "  is true",\
+                  "   is false",\
                   __FILE__,\
                   __LINE__)
 
@@ -451,15 +470,17 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
                     false,\
                   #statement,\
                   "  is false",\
+                  "  is true",\
                   __FILE__,\
                   __LINE__)
 
 #undef expect_eq
 #define expect_eq(x, y)\
-        BWTEST_ExpectAux( (fabs(x - y) <= 0.00001),\
+        BWTEST_ExpectAux( (bool)(x == y),\
                     true,\
                     #x,\
                     " == "#y,\
+                    " not equal",\
                   __FILE__,\
                   __LINE__)
 
@@ -469,6 +490,7 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
                     true,\
                     #x,\
                     " == "#y,\
+                    "not equal at "#pres,\
                   __FILE__,\
                   __LINE__)
 
@@ -478,15 +500,17 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
                     true,\
                     #x,\
                     " != "#y,\
+                    " equal at "#pres,\
                   __FILE__,\
                   __LINE__)
 
 #undef expect_nq
 #define expect_nq(x, y)\
-        BWTEST_ExpectAux( (fabs(x - y) > 0.00001),\
+        BWTEST_ExpectAux( (x != y),\
                     true,\
                     #x,\
                     " != "#y,\
+                    " equals ",\
                   __FILE__,\
                   __LINE__)
 
@@ -500,6 +524,7 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
                                     true,\
                                     #statement,\
                                     "  throws "#exceptType,\
+                                    "  didn't throw "#exceptType,\
                                     __FILE__,\
                                     __LINE__)
 
@@ -512,9 +537,13 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
                                     true,\
                                     #statement,\
                                     "  throws any thing",\
+                                    "  throws nothing",\
                                     __FILE__,\
                                     __LINE__)
 
+#include "bwtest-impl.h"
+
+#define put_out bwtest::getOutputStream()
 
 #undef COUT_1
 #endif //_BOWEN_TEST_H_
