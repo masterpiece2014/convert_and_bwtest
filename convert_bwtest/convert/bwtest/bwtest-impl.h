@@ -316,6 +316,7 @@ TestRegister* TestRegister::_handler = __BW_NULL_PTR;
 
 bool BWTEST_ExpectAux::BWTEST_bool_caughtExcepttion = false;
 
+
 template<typename PrintType>
 std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
     if(expAux._isFalse) {
@@ -323,8 +324,9 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg) {
         return ::bwtest::getOutputStream();
     }
     else {
-       // static std::stringstream nullOS; // smaller than stringstream
-        static BWTest_Names::basicNullOStream nullOS;
+       // static std::stringstream nullOS;
+       // nullOS.clear();
+        static BWTest_Names::basicNullOStream nullOS;// smaller than stringstream
         return nullOS;
     };
 }

@@ -90,8 +90,8 @@
 #include <stdexcept>
 #include <vector>
 #include <limits>
-#include <cstddef>
 #include <cstdlib>
+#include <cstddef>
 #include <cmath>
 #include <cassert>
 #include <cstring>
@@ -103,10 +103,11 @@
 #endif
 
 
-/// to_string may not be supported
-/// so break this
+/// to_string may not be supported by GCC 4.8(I guess)
+/// so break this macro
+///, and at the lack of decltype(), to deduce type, guidance function is defined here.
 #ifdef __BWTEST_HAS_CX
-#include <string>
+
 #undef ERROR_MSG
 #define ERROR_MSG(message)\
 (__FILE__ "(" + std::to_string((long long int) __LINE__) + "): " + (message)\).c_str()
@@ -119,6 +120,7 @@
                 ? (void)0 : throw std::underflow_error(ERROR_MSG("underflow in convertion"))
 #else
 
+// this function help the compiler deduce type, and do the checking.
     template<class T, class E>
     void __BWTEST_RANGE_CHEACK(T val, E);
 
@@ -162,15 +164,6 @@
 
 
 
-#ifdef __BWTEST_HAS_ENOUGH_CXX11__
-#define __BW_NOEXCEPT noexcept
-#define __BW_NULL_PTR nullptr
-#define __BW_OVERRRIDE override
-#else
-#define __BW_NOEXCEPT throw()
-#define __BW_NULL_PTR NULL
-#define __BW_OVERRRIDE
-#endif
 
 ///!<  scoped enumeration is not supported in c++99 or c++03
 ///!< what a pity !
@@ -351,7 +344,16 @@ class TestRegister
         static void
         reportAllTests() __BW_NOEXCEPT;
 };
-
+///////////////////////////////////////////////////////////////////////////////////////
+//                  NOTE: if you cannot compile this,
+//                      please modify the following:
+//                     1. comment this class
+//                     2. change bwtest-impl.h line 328
+//                          from
+//                             static BWTest_Names::basicNullOStream nullOS;
+//                           to
+//                              static std::stringstream nullOS;
+///////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////
 /////////////       copyright
 /////////////
@@ -476,7 +478,7 @@ std::ostream& operator<< (const BWTEST_ExpectAux& expAux, PrintType& msg);
 
 #undef expect_eq
 #define expect_eq(x, y)\
-        BWTEST_ExpectAux( (bool)(x == y),\
+        BWTEST_ExpectAux( (x == y),\
                     true,\
                     #x,\
                     " == "#y,\
