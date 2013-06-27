@@ -1,0 +1,67 @@
+﻿
+
+该测试框架的使用方法全都在sample_unittest.cc里演示了。
+
+
+在演示代码里，sample.h是声明文件，
+sample-impl.cpp是定义文件，
+
+sample_unittest.cc演示了如何用bwtest测试sample这段代码。
+
+
+
+
+这里介绍一下bwtest是怎么来的。
+
+
+
+version 0.3
+	在测试组件时，经常要写很多重复的代码，
+		
+			例如
+			
+				assert(fabs(float1 - float2) < 0.00001)
+		
+		所以最开始bwtest v0.3只是一些简单的包装了的宏，比如测浮点数的宏，loop函数的宏，
+		
+		测试数值转换是否安全无溢出的宏。
+
+
+
+version 0.8
+	后来发现了google的开源测试框架：gtest，提供了功能强大的测试功能，
+	
+		但它的源代码却太过庞大，不易看懂，于是我仿照gtest演示示例，
+		完成了如下功能：
+		
+			TEST(testName, testExcutionNumbers){...}
+		
+			TEST(caseName, excutionNum){...}
+		
+			TEST ...
+		
+			TEST ...
+		
+			main(){ RUN_ALL();}
+
+
+		即一次书写，自动调用。
+	
+		与gtest不同的是，TEST宏的第二个参数是数字，用来设定该测试用例需要执行的次数
+	
+		因为我发现有些时候代码有时能正确运行，有时不能，一般都与内存有关。这时候该代码就需要
+	
+		被执行多次才能判断是否有flaw。我写的TEST能让测试着很方便的设置执行次数。
+
+
+
+version1.0
+	最开始bwtest的所有输出都是cerr直接到终端的，但有时测试输出的信息太多，或是需要记录
+	
+		测试信息，所以我加上了设定输出方向的功能。默认是终端，
+		也可以很方便的设置输出到文件（只需写下文件路径即可）
+
+
+
+
+
