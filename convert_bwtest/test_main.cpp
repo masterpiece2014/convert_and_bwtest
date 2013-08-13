@@ -1,22 +1,20 @@
 
 
+#include "bwtest\bwtest.h"
+#include "bwtest\bwtest.cpp"
+
+#include "sample1_unittest.h"
+#include "sample2_unittest.h"
 
 
+int main() {
+    //RUN_TEST(default, "unknown");
+    //RUN_GROUP(custom);
 
-#include "convert_test.h"
-#include "hallocator_test.h"
-
-using std::cout;
-using std::cin;
-using std::endl;
-
-
-int main()
-{
-	//RUN_GROUP("default");
-	cout <<(1<<8) <<endl;
-    RUN_GROUP("convert");
-	//put_out << "\n>>>total size" << BWTest_Names::TestRegister::instance()->tests_.size();// << "  " <<TestRegister::instance()->tests_.begin()->first << "\n";
-
+    RUN_GROUP(sample1);
+    RUN_TEST(custom, MyCustomTestClass);
+    RUN_TEST(sample1, exceptions);
+    //RUN_GROUP(sample2);
+    
     return 0;
 }
